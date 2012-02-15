@@ -40,10 +40,10 @@ public class RadialGeoHashIteratorTest {
 
             count++;
 
-            System.out.println("RGHI " + count + ".  " + geoHash.toBase32() + " = " + distanceMeters + " meters");
+            System.out.println("RadialGHI " + count + ".  \"" + geoHash.toBase32() + "\", = " + distanceMeters + " meters");
         }
 
         // there should have been 21 qualifying GeoHashes meeting these criteria
-        Assert.assertEquals("Expected 21 GeoHashes in the result set; found " + Integer.toString(count) + ".", count, 21);
+        Assert.assertEquals("Expected number of GeoHashes in the result set did not match.", count, 42);
     }
 }
