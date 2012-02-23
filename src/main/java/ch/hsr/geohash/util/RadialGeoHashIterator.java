@@ -30,9 +30,6 @@ public class RadialGeoHashIterator extends RectangleGeoHashIterator {
                 radiusMeters+0.6*getPrecisionInMetersLongitude(precision)
         );
         
-        System.out.println("Radius (m):  " + radiusMeters);
-        System.out.println("Effective radius (m):  " + effectiveRadiusMeters);
-
         WGS84Point ptLL = VincentyGeodesy.moveInDirection(centerPoint, 225.0, effectiveRadiusMeters);
         WGS84Point ptUR = VincentyGeodesy.moveInDirection(centerPoint, 45.0, effectiveRadiusMeters);
 
