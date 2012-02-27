@@ -1,5 +1,7 @@
 package ch.hsr.geohash;
 
+import ch.hsr.geohash.util.VincentyGeodesy;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -31,21 +33,14 @@ public class GeoTimeHash {
     public final static int BIT_CLASS__LATITUDE = 2;
     public final static int BIT_CLASS__LONGITUDE = 3;
 
-    //private final static double MIN_DATE_SECONDS = Math.round(Double.MIN_VALUE);
-    private final static Date MIN_DATE = (new GregorianCalendar(0, 1, 1, 0, 0, 0)).getTime();
-    private final static double MIN_DATE_SECONDS = getDateAsDouble(MIN_DATE);
-
-    //private final static double MAX_DATE_SECONDS = Math.round(Double.MAX_VALUE);
-    private final static Date MAX_DATE = (new GregorianCalendar(3000, 12, 31, 23, 59, 59)).getTime();
-    private final static double MAX_DATE_SECONDS = getDateAsDouble(MAX_DATE);
-
-    private final static double DATE_RESOLUTION_MILLIS = 60.0 * 1000.0;  // one-minute
-
+    private final static double REFERENCE_DATE_MILLIS = (double)(new GregorianCalendar(3000, 1, 1, 0, 0, 0)).getTime().getTime();
+    private final static double DATE_SIGMOID_K = -1.0/REFERENCE_DATE_MILLIS * Math.log(2.0/(0.8+1.0)-1.0);
+    
     private double[] rangeLatitude = {-90.0, 0.0, 90.0};
 
     private double[] rangeLongitude = {-180.0, 0.0, 180.0};
 
-    private double[] rangeDateSeconds = {MIN_DATE_SECONDS, 0.5*(MIN_DATE_SECONDS+MAX_DATE_SECONDS), MAX_DATE_SECONDS};
+    private double[] rangeDateSignal = {-1.0, 0.0, +1.0};
 
     private final static int NUM_LONGS_DATA = 10;
     private long[] longs = new long[NUM_LONGS_DATA];
@@ -69,21 +64,21 @@ public class GeoTimeHash {
     }
 
     private int getBitClass(int n) {
-        int r = n % 10;
-        if (r < 4) return BIT_CLASS__DATE;
-        if (r < 7) return BIT_CLASS__LONGITUDE;
+        int r = n % 3;
+        if (r < 1) return BIT_CLASS__DATE;
+        if (r < 2) return BIT_CLASS__LONGITUDE;
         return BIT_CLASS__LATITUDE;
     }
     
     private void encode(double latitude, double longitude, Date date, int desiredPrecision) {
         int bit=0;
 
-        double seconds = getDateAsDouble(date);
+        double signal = getSignalFromDate(date);
 
         for (int bitPos=0; bitPos<desiredPrecision; bitPos++) {
             switch (getBitClass(bitPos)) {
                 case BIT_CLASS__DATE:
-                    setBit(bitPos, seconds < rangeDateSeconds[1] ? 0 : 1);
+                    setBit(bitPos, signal < rangeDateSignal[1] ? 0 : 1);
                     break;
                 case BIT_CLASS__LONGITUDE:
                     setBit(bitPos, longitude < rangeLongitude[1] ? 0 : 1);
@@ -97,14 +92,16 @@ public class GeoTimeHash {
         precision = desiredPrecision;
     }
     
-    public static double getDateAsDouble(Date date) {
-        if (date==null) throw new IllegalArgumentException("Invalid (NULL) date");
-        return (double)(date.getTime()) / DATE_RESOLUTION_MILLIS;
+    public static double getSignalFromDate(Date date) {
+        return 2.0 / (1.0+Math.exp(-1.0*DATE_SIGMOID_K*date.getTime())) - 1.0;
     }
     
-    public static Date getDateFromDouble(double reduced) {
-        long millis = Math.round(reduced * DATE_RESOLUTION_MILLIS);
-        return new Date(millis);
+    public static Date getDateFromSignal(double signal) {
+        if (signal <= -1.0) return new Date(Long.MIN_VALUE);
+        if (signal >= +1.0) return new Date(Long.MAX_VALUE);
+
+        double millis = -1.0/DATE_SIGMOID_K * Math.log(2.0/(signal+1.0)-1.0);
+        return new Date(Math.round(millis));
     }
     
     private void divideInterval(double[] range, boolean goRight) {
@@ -135,7 +132,7 @@ public class GeoTimeHash {
     private void setBit(int pos, int bit) {
         switch (getBitClass(pos)) {
             case BIT_CLASS__DATE:
-                divideInterval(rangeDateSeconds, bit!=0);
+                divideInterval(rangeDateSignal, bit!=0);
                 break;
             case BIT_CLASS__LONGITUDE:
                 divideInterval(rangeLongitude, bit!=0);
@@ -231,6 +228,65 @@ public class GeoTimeHash {
         return s;
     }
     
+    public String getLongitudeCellSizeString() {
+        java.text.DecimalFormat df4 = new java.text.DecimalFormat("###,##0.0000");
+
+        double distanceMeters = VincentyGeodesy.distanceInMeters(
+                new WGS84Point(rangeLatitude[1], rangeLongitude[0]),
+                new WGS84Point(rangeLatitude[1], rangeLongitude[2])
+        );
+
+        return "dLon("
+            + df4.format(rangeLongitude[2]-rangeLongitude[0]) + " deg, "
+            + df4.format(distanceMeters) + " m"
+            + ")"
+        ;
+    }
+
+    public String getLatitudeCellSizeString() {
+        java.text.DecimalFormat df4 = new java.text.DecimalFormat("###,##0.0000");
+
+        double distanceMeters = VincentyGeodesy.distanceInMeters(
+                new WGS84Point(rangeLatitude[0], rangeLongitude[1]),
+                new WGS84Point(rangeLatitude[2], rangeLongitude[1])
+        );
+
+        return "dLat("
+                + df4.format(rangeLatitude[2]-rangeLatitude[0]) + " deg, "
+                + df4.format(distanceMeters) + " m"
+                + ")"
+                ;
+    }
+    
+    public String getDateCellSizeString() {
+        java.text.DecimalFormat df2 = new java.text.DecimalFormat("###,##0.00");
+
+        Date dtEarly = getDateFromSignal(rangeDateSignal[0]);
+        Date dtLate = getDateFromSignal(rangeDateSignal[2]);
+        long dMillis = dtLate.getTime() - dtEarly.getTime();
+        
+        double seconds = dMillis / 1000.0;
+        double minutes = seconds / 60.0;
+        double hours = minutes / 60.0;
+        double days = hours / 24.0;
+        double weeks = days / 7.0;
+        double months = weeks / (52.0/12.0);
+        double years = days / 365.24;
+        
+        String s = df2.format(seconds) + " seconds";
+        if (years >= 1.0) s = df2.format(years) + " years";
+        else if (months >= 1.0) s = df2.format(months) + " months";
+        else if (weeks >= 1.0) s = df2.format(weeks) + " weeks";
+        else if (days >= 1.0) s = df2.format(days) + " days";
+        else if (hours >= 1.0) s = df2.format(hours) + " hours";
+        else if (minutes >= 1.0) s = df2.format(minutes) + " minutes";
+
+        return "dDate("
+            + s
+            + ")"
+        ;
+    }
+
     public String getRangeString(String label, double[] range) {
         java.text.DecimalFormat df4 = new java.text.DecimalFormat("###,##0.0000");
         
@@ -259,10 +315,10 @@ public class GeoTimeHash {
     }
     
     public String getDateRangeString(String label, double[] range) {
-        java.text.DecimalFormat df4 = new java.text.DecimalFormat("0");
+        java.text.DecimalFormat df4 = new java.text.DecimalFormat("0.0000");
 
-        Date dtMin = getDateFromDouble(range[0]);
-        Date dtMax = getDateFromDouble(range[2]);
+        Date dtMin = getDateFromSignal(range[0]);
+        Date dtMax = getDateFromSignal(range[2]);
         
         return label + "["
                 + df4.format(range[0]) + "=" + getSimpleDateString(dtMin)
@@ -277,12 +333,17 @@ public class GeoTimeHash {
         java.text.DecimalFormat df4 = new java.text.DecimalFormat("#,##0.0000");
         
         return "GeoTimeHash " + precision + " bits -> " +
-                "(" + df4.format(rangeLatitude[1]) + ", " + df4.format(rangeLongitude[1]) + ", " + getSimpleDateString(getDateFromDouble(rangeDateSeconds[1])) + ") =>" +
+                "(" + df4.format(rangeLatitude[1]) + ", " + df4.format(rangeLongitude[1]) + ", " + getSimpleDateString(getDateFromSignal(rangeDateSignal[1])) + ") =>" +
+                " cellSize(" +
+                getLatitudeCellSizeString() + "; " +
+                getLongitudeCellSizeString() + "; " +
+                getDateCellSizeString() +
+                ")" +
                 " 2[" + toBinaryString() + "]" +
                 " 64[" + toBase64() + "]" +
                 " " + getRangeString("LAT", rangeLatitude) +
                 " " + getRangeString("LON", rangeLongitude) +
-                " " + getDateRangeString("date", rangeDateSeconds)
+                " " + getDateRangeString("date", rangeDateSignal)
         ;
     }
 }

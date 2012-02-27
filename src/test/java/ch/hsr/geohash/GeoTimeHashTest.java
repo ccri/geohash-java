@@ -54,14 +54,15 @@ public class GeoTimeHashTest {
         System.out.println("[GeoTimeHashTest.testHierarchy]");
 
         // the geo-time anchor to encode
-        WGS84Point point = new WGS84Point(31.4067, 60.0903);
-        Date date = (new GregorianCalendar(-1000, 1, 1, 0, 0, 0)).getTime();
+        WGS84Point point = new WGS84Point(27.7784492, -82.647669);
+        Date date = (new GregorianCalendar(1970, 8, 8, 20, 50, 0)).getTime();
         
         String lastBase64 = GeoTimeHash.withBitPrecision(point.getLatitude(), point.getLongitude(), date, 6).toBase64();
         for (int i=12; i<=126; i+=6) {
-            String base64 = GeoTimeHash.withBitPrecision(point.getLatitude(), point.getLongitude(), date, i).toBase64();
+            GeoTimeHash gth = GeoTimeHash.withBitPrecision(point.getLatitude(), point.getLongitude(), date, i);
+            String base64 = gth.toBase64();
             
-            System.out.println("  " + lastBase64 + ", " + base64);
+            System.out.println("  " + gth);
             
             Assert.assertTrue("Base64-encoding of geo-time at greater precision (" + i + ") is not include the encoding of the geo-time at lesser precision (" + (i-6) + ")", base64.startsWith(lastBase64));
 
