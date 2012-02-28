@@ -71,4 +71,27 @@ public class GeoTimeHashTest {
         
         System.out.println("Final encoding:  " + GeoTimeHash.fromBase64String(lastBase64));
     }
+    
+    @Test
+    public void testIteration() {
+        int precision = 42;
+        
+        GeoTimeHash gthLL = GeoTimeHash.withBitPrecision(27.78, -82.65, (new GregorianCalendar(1970, 8, 8, 20, 50, 0)).getTime(), precision);
+        GeoTimeHash gthUR = GeoTimeHash.withBitPrecision(27.80, -82.60, (new GregorianCalendar(1971, 5, 7, 10, 0, 0)).getTime(), precision);
+        
+        GeoTimeHash gth = GeoTimeHash.getFirstInBox(gthLL, gthUR, precision);
+        
+        int count = 0;
+        
+        while (gth != null) {
+            count++;
+            Assert.assertTrue("Exceeded maximum iteration count", count<=1000);
+
+            System.out.println("[GeoTimeHash iteration] " + count + ".  " + gth);
+            
+            gth = gth.getNextInBox(gthLL, gthUR);
+        }
+        
+        Assert.assertEquals("GeoTimeHash iteration count did not match", 72, count);
+    }
 }

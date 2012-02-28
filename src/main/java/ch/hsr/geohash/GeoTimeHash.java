@@ -33,16 +33,16 @@ public class GeoTimeHash {
     public final static int BIT_CLASS__LATITUDE = 2;
     public final static int BIT_CLASS__LONGITUDE = 3;
 
+    private double[] rangeLatitude = {-90.0, 0.0, 90.0, 180.0};
+
+    private double[] rangeLongitude = {-180.0, 0.0, 180.0, 360.0};
+
+    private double[] rangeDateSignal = {-1.0, 0.0, +1.0, 2.0};
+
     private final static double REFERENCE_DATE_MILLIS = (double)(new GregorianCalendar(3000, 1, 1, 0, 0, 0)).getTime().getTime();
     private final static double DATE_SIGMOID_K = -1.0/REFERENCE_DATE_MILLIS * Math.log(2.0/(0.8+1.0)-1.0);
-    
-    private double[] rangeLatitude = {-90.0, 0.0, 90.0};
 
-    private double[] rangeLongitude = {-180.0, 0.0, 180.0};
-
-    private double[] rangeDateSignal = {-1.0, 0.0, +1.0};
-
-    private final static int NUM_LONGS_DATA = 10;
+    private final static int NUM_LONGS_DATA = 2;
     private long[] longs = new long[NUM_LONGS_DATA];
     
     private int precision = 0;
@@ -61,6 +61,127 @@ public class GeoTimeHash {
         gtHash.fromBase64(base64);
 
         return gtHash;
+    }
+
+    // TODO:  Make a version that's not quite so grossly inefficient...
+    private static GeoTimeHash createCopy(GeoTimeHash gthSource) {
+        if (gthSource==null) throw new IllegalArgumentException("Invalid copy source");
+        
+        return fromBase64String(gthSource.toBase64());
+    }
+
+    public static GeoTimeHash getFirstInBox(GeoTimeHash gthLL, GeoTimeHash gthUR, int precision) {
+        if (gthLL==null) throw new IllegalArgumentException("Invalid lower-left corner");
+        if (gthUR==null) throw new IllegalArgumentException("Invalid upper-right corner");
+
+        if (gthLL.getMinLatitude() >= gthUR.getMinLatitude()) throw new IllegalArgumentException("Latitude LL >= UR");
+        if (gthLL.getMinLongitude() >= gthUR.getMinLongitude()) throw new IllegalArgumentException("LongitudeLL >= UR");
+        if (gthLL.getMinDateSignal() >= gthUR.getMinDateSignal()) throw new IllegalArgumentException("Date signal LL >= UR");
+
+        double lon = gthLL.getMinLongitude();
+        double lat = gthLL.getMinLatitude();
+        Date dt = gthLL.getMinDate();
+        
+        return withBitPrecision(lat, lon, dt, precision);
+    }
+
+    /**
+     * The caller is responsible for ensuring that the lower-left corner is, in fact (and for dimensions)
+     * less than or equal to the upper-right corner.
+     *
+     * Order of iteration across dimensions:
+     * <ol>
+     *     <li>longitude</li>
+     *     <li>latitude</li>
+     *     <li>time</li>
+     * </ol>
+     *
+     * @param gthLL
+     * @param gthUR
+     * @return
+     */
+    public GeoTimeHash getNextInBox(GeoTimeHash gthLL, GeoTimeHash gthUR) {
+        if (gthLL==null) throw new IllegalArgumentException("Invalid lower-left corner");
+        if (gthUR==null) throw new IllegalArgumentException("Invalid upper-right corner");
+
+        double lon = getLongitude();
+        double lat = getLatitude();
+        double sig = getDateSignal();
+
+        double dLon = 1.49 * rangeLongitude[3];
+        double dLat = 1.49 * rangeLatitude[3];
+        double dSig = 1.49 * rangeDateSignal[3];
+
+        double dHalfLon = 0.5 * rangeLongitude[3];
+        double dHalfLat = 0.5 * rangeLatitude[3];
+        double dHalfSig = 0.5 * rangeDateSignal[3];
+
+        boolean isDone = false;
+
+        lon += dLon;
+        if ((lon+dHalfLon) > gthUR.getMaxLongitude()) {
+            lon = gthLL.getMinLongitude();
+            lat += dLat;
+            if ((lat+dHalfLat) > gthUR.getMaxLatitude()) {
+                lat = gthLL.getMinLatitude();
+                sig += dSig;
+                if ((sig+dHalfSig) > gthUR.getMaxDateSignal()) return null;
+            }
+        }
+        
+        GeoTimeHash gthNext = withBitPrecision(lat, lon, getDateFromSignal(sig), precision);
+        if (gthNext.toString().compareTo(toString())==0)
+            System.out.println("[ERROR] New GeoTimeHash is identical to the old one!");
+        
+        return gthNext;
+    }
+
+    public double getLatitude() {
+        return rangeLatitude[1];
+    }
+    
+    public double getLongitude() {
+        return rangeLongitude[1];
+    }
+    
+    public Date getDate() {
+        return getDateFromSignal(rangeDateSignal[1]);
+    }
+
+    public double getDateSignal() {
+        return rangeDateSignal[1];
+    }
+
+    public double getMinLatitude() {
+        return Math.max(-90.0, rangeLatitude[1] - rangeLatitude[3]);
+    }
+
+    public double getMinLongitude() {
+        return Math.max(-180.0, rangeLongitude[1] - rangeLongitude[3]);
+    }
+
+    public Date getMinDate() {
+        return getDateFromSignal(rangeDateSignal[1] - rangeDateSignal[3]);
+    }
+
+    public double getMinDateSignal() {
+        return Math.max(-1.0, rangeDateSignal[1] - rangeDateSignal[3]);
+    }
+
+    public double getMaxLatitude() {
+        return Math.min(90.0, rangeLatitude[1] + rangeLatitude[3]);
+    }
+
+    public double getMaxLongitude() {
+        return Math.min(180.0, rangeLongitude[1] + rangeLongitude[3]);
+    }
+
+    public Date getMaxDate() {
+        return getDateFromSignal(rangeDateSignal[1] + rangeDateSignal[3]);
+    }
+
+    public double getMaxDateSignal() {
+        return Math.min(1.0, rangeDateSignal[1] + rangeDateSignal[3]);
     }
 
     private int getBitClass(int n) {
@@ -108,12 +229,14 @@ public class GeoTimeHash {
         if (!goRight) {
             // descend
             range[2] = range[1];
-            range[1] = 0.5 * (range[0] + range[2]);
         } else {
             // ascend
             range[0] = range[1];
-            range[1] = 0.5 * (range[0] + range[2]);
         }
+
+        // update the midpoint and the range
+        range[1] = 0.5 * (range[0] + range[2]);
+        range[3] = range[2] - range[1];
     }
 
     private int getBit(int pos) {
@@ -307,7 +430,7 @@ public class GeoTimeHash {
         
         return pad(Integer.toString(c.get(Calendar.YEAR)), "0", 2, true) + "-" +
                 pad(Integer.toString(c.get(Calendar.MONTH)), "0", 2, true) + "-" +
-                pad(Integer.toString(c.get(Calendar.DAY_OF_MONTH)), "0", 2, true) + " " +
+                pad(Integer.toString(c.get(Calendar.DAY_OF_MONTH)+1), "0", 2, true) + " " +
                 pad(Integer.toString(c.get(Calendar.HOUR_OF_DAY)), "0", 2, true) + ":" +
                 pad(Integer.toString(c.get(Calendar.MINUTE)), "0", 2, true) + ":" +
                 pad(Integer.toString(c.get(Calendar.SECOND)), "0", 2, true)
@@ -328,12 +451,16 @@ public class GeoTimeHash {
         ;
     }
 
+    public String getPointString() {
+        java.text.DecimalFormat df4 = new java.text.DecimalFormat("#,##0.0000");
+        return "(" + df4.format(rangeLatitude[1]) + ", " + df4.format(rangeLongitude[1]) + ", " + getSimpleDateString(getDateFromSignal(rangeDateSignal[1])) + ")";
+    }
+    
     @Override
     public String toString() {
-        java.text.DecimalFormat df4 = new java.text.DecimalFormat("#,##0.0000");
-        
+
         return "GeoTimeHash " + precision + " bits -> " +
-                "(" + df4.format(rangeLatitude[1]) + ", " + df4.format(rangeLongitude[1]) + ", " + getSimpleDateString(getDateFromSignal(rangeDateSignal[1])) + ") =>" +
+                getPointString() + " =>" +
                 " cellSize(" +
                 getLatitudeCellSizeString() + "; " +
                 getLongitudeCellSizeString() + "; " +
