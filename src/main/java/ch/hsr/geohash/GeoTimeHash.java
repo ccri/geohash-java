@@ -153,35 +153,35 @@ public class GeoTimeHash {
     }
 
     public double getMinLatitude() {
-        return Math.max(-90.0, rangeLatitude[1] - rangeLatitude[3]);
+        return Math.max(-90.0, rangeLatitude[0]);
     }
 
     public double getMinLongitude() {
-        return Math.max(-180.0, rangeLongitude[1] - rangeLongitude[3]);
+        return Math.max(-180.0, rangeLongitude[0]);
     }
 
     public Date getMinDate() {
-        return getDateFromSignal(rangeDateSignal[1] - rangeDateSignal[3]);
+        return getDateFromSignal(rangeDateSignal[0]);
     }
 
     public double getMinDateSignal() {
-        return Math.max(-1.0, rangeDateSignal[1] - rangeDateSignal[3]);
+        return Math.max(-1.0, rangeDateSignal[0]);
     }
 
     public double getMaxLatitude() {
-        return Math.min(90.0, rangeLatitude[1] + rangeLatitude[3]);
+        return Math.min(90.0, rangeLatitude[2]);
     }
 
     public double getMaxLongitude() {
-        return Math.min(180.0, rangeLongitude[1] + rangeLongitude[3]);
+        return Math.min(180.0, rangeLongitude[2]);
     }
 
     public Date getMaxDate() {
-        return getDateFromSignal(rangeDateSignal[1] + rangeDateSignal[3]);
+        return getDateFromSignal(rangeDateSignal[2]);
     }
 
     public double getMaxDateSignal() {
-        return Math.min(1.0, rangeDateSignal[1] + rangeDateSignal[3]);
+        return Math.min(1.0, rangeDateSignal[2]);
     }
 
     private int getBitClass(int n) {
