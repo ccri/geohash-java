@@ -35,6 +35,8 @@ public class TrackGeoHashIterator extends GeoHashIterator {
     class Segment {
         WGS84Point LL;
         WGS84Point UR;
+        WGS84Point a;
+        WGS84Point b;
 
         /**
          * Simple constructor.
@@ -44,6 +46,8 @@ public class TrackGeoHashIterator extends GeoHashIterator {
         public Segment(WGS84Point a, WGS84Point b) {
             super();
             
+            this.a = a;
+            this.b = b;
             LL = new WGS84Point(Math.min(a.getLatitude(), b.getLatitude()), Math.min(a.getLongitude(), b.getLongitude()));
             UR = new WGS84Point(Math.max(a.getLatitude(), b.getLatitude()), Math.max(a.getLongitude(), b.getLongitude()));
         }
@@ -148,8 +152,8 @@ public class TrackGeoHashIterator extends GeoHashIterator {
                 if (filterRectangle==null || segment.intersects(filterRectangle)) {
                     // create this single-line-segment GeoHash iterator
                     LineSegmentBufferGeoHashIterator segIter = new LineSegmentBufferGeoHashIterator(
-                            segment.LL.getLatitude(), segment.LL.getLongitude(),
-                            segment.UR.getLatitude(), segment.UR.getLongitude(),
+                            segment.a.getLatitude(), segment.a.getLongitude(),
+                            segment.b.getLatitude(), segment.b.getLongitude(),
                             radiusInMeters,
                             precision
                     );
