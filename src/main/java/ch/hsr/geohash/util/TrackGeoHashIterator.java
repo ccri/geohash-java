@@ -45,7 +45,7 @@ public class TrackGeoHashIterator extends GeoHashIterator {
          */
         public Segment(WGS84Point a, WGS84Point b) {
             super();
-            
+
             this.a = a;
             this.b = b;
             LL = new WGS84Point(Math.min(a.getLatitude(), b.getLatitude()), Math.min(a.getLongitude(), b.getLongitude()));
@@ -70,22 +70,22 @@ public class TrackGeoHashIterator extends GeoHashIterator {
 
             return true;
         }
-        
+
         @Override
         public String toString() {
             String s = "Segment(";
-            
+
             s = s + LL.toString() + ", " + UR.toString();
-            
+
             return s + ")";
         }
     }
-    
-    
+
+
     /**
      * Map of current-iteration latitude to per-segment GeoHash iterators.
      */
-    
+
     final TreeMap<Double, ArrayList<LineSegmentBufferGeoHashIterator>> segmentIterators = new TreeMap<Double, ArrayList<LineSegmentBufferGeoHashIterator>>();
 
     /**
@@ -94,7 +94,7 @@ public class TrackGeoHashIterator extends GeoHashIterator {
     double currentLatitude;
 
     /**
-     * 
+     *
      */
     double currentDistance;
 
@@ -117,7 +117,7 @@ public class TrackGeoHashIterator extends GeoHashIterator {
      * A suitably small number of degrees that we can treat it as essentially zero.
      */
     public final static double NEARLY_ZERO_DEGREES = GeoHashIterator.convertRadiusInMetersToDegrees(0.1);
-    
+
     /**
      * Simple constructor.
      */
@@ -131,7 +131,7 @@ public class TrackGeoHashIterator extends GeoHashIterator {
         // copy the points
         ArrayList<WGS84Point> points = new ArrayList<WGS84Point>();
         for (WGS84Point point : pointsGiven) points.add(point);
-        
+
         // ensure there are at least two points
         if (points.size() == 1) {
             points.add(new WGS84Point(
@@ -178,7 +178,7 @@ public class TrackGeoHashIterator extends GeoHashIterator {
                     }
                 }
             }
-            
+
             // update the last point
             lastPoint = point;
         }
@@ -198,7 +198,7 @@ public class TrackGeoHashIterator extends GeoHashIterator {
     /**
      *
      */
-    
+
     protected boolean refreshCurrentLatitudeIterator() {
         // clear out the state pertaining to the current latitude
         mapGeoHashToMinDistance.clear();
@@ -220,16 +220,16 @@ public class TrackGeoHashIterator extends GeoHashIterator {
                         mapGeoHashToMinDistance.put(gh, distance);
                     }
                 }
-                
+
                 // remember that we will need to update this segment-iterators position in the global map
                 toUpdate.add(segItr);
             }
-            
+
             // set the iterator that ranges over the GeoHashes we encountered for this latitude
             itrCurrentLatitudeGeoHashes = mapGeoHashToMinDistance.keySet().iterator();
-            
+
             // update the segment-iterators that we exhausted...
-            
+
             // remove these iterators from their old list (current latitude)
             ArrayList<LineSegmentBufferGeoHashIterator> oldList = segmentIterators.get(currentLatitude);
             oldList.removeAll(toUpdate);
@@ -238,14 +238,14 @@ public class TrackGeoHashIterator extends GeoHashIterator {
             } else {
                 segmentIterators.remove(currentLatitude);
             }
-            
+
             // for each of the iterators to update, put it in the next list
             for (LineSegmentBufferGeoHashIterator segItr : toUpdate) {
                 // some iterators may have been entirely exhausted; only update those that have at least one more GeoHash
                 if (segItr.hasNext()) {
                     ArrayList<LineSegmentBufferGeoHashIterator> list;
                     double latitude = segItr.getCurrentGeoHash().getPoint().getLatitude();
-                    
+
                     if (segmentIterators.containsKey(latitude)) {
                         list = segmentIterators.get(latitude);
                     } else {
@@ -269,7 +269,7 @@ public class TrackGeoHashIterator extends GeoHashIterator {
      */
     public double getNextLatitude() {
         double latitude = currentLatitude + incLatitudeDegrees;
-        
+
         return GeoHash.withBitPrecision(latitude, ghBounds[0].getPoint().getLongitude(), precision).getPoint().getLatitude();
     }
 
