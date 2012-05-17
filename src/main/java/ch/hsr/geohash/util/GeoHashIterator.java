@@ -117,7 +117,7 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
 
         // count the span (in bits) for each dimension
         this.spanBitsLat = latBitsUR - latBitsLL + 1;
-        this.spanBitsLon = lonBitsUR - latBitsLL + 1;
+        this.spanBitsLon = lonBitsUR - lonBitsLL + 1;
 
         // initialize whether there are any qualifying GeoHashes to iterate over (there had better be!)
         if (shouldAdvance) this.doesHaveNext = advance();
@@ -298,11 +298,11 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
         return latPosition - latBitsLL;
     }
 
-    protected long getSpanBitsLatitude() {
+    public long getSpanBitsLatitude() {
         return spanBitsLat;
     }
 
-    protected long getSpanBitsLongitude() {
+    public long getSpanBitsLongitude() {
         return spanBitsLon;
     }
 
@@ -319,11 +319,11 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
         return ghCurrent;
     }
 
-    protected double getPrecisionInMetersLatitude() {
+    public double getPrecisionInMetersLatitude() {
         return precisionInMetersLat;
     }
 
-    protected double getPrecisionInMetersLongitude() {
+    public double getPrecisionInMetersLongitude() {
         return precisionInMetersLon;
     }
 
@@ -348,6 +348,7 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
 
     /**
      * Given a radius in meters, what is the worst-case size in degrees that it might represent?
+     * Note:  This is almost entirely useless as a measure.
      *
      * @param meters a distance in meters
      * @return a distance in degrees
@@ -361,6 +362,7 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
 
     /**
      * Given a radius in degrees, what is a blended-estimate size in meters that it might represent?
+     * Note:  This is almost entirely useless as a measure.
      *
      * @param degrees a distance in degrees
      * @return a distance in meters
@@ -382,6 +384,7 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
     
     /**
      * Given a radius in degrees, what is a blended-estimate size in meters that it might represent?
+     * Note:  This is almost entirely useless as a measure.
      *
      * @param degrees a distance in degrees
      * @return a distance in meters
@@ -418,6 +421,7 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
 
     /**
      * Utility function to express the distance between two points in degrees.
+     * Note:  This is almost entirely useless as a measure.
      *
      * @param a one segment end-point
      * @param b one segment end-point
