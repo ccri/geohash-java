@@ -298,11 +298,11 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
         return latPosition - latBitsLL;
     }
 
-    protected long getSpanBitsLatitude() {
+    public long getSpanBitsLatitude() {
         return spanBitsLat;
     }
 
-    protected long getSpanBitsLongitude() {
+    public long getSpanBitsLongitude() {
         return spanBitsLon;
     }
 
@@ -319,11 +319,11 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
         return ghCurrent;
     }
 
-    protected double getPrecisionInMetersLatitude() {
+    public double getPrecisionInMetersLatitude() {
         return precisionInMetersLat;
     }
 
-    protected double getPrecisionInMetersLongitude() {
+    public double getPrecisionInMetersLongitude() {
         return precisionInMetersLon;
     }
 
