@@ -46,15 +46,19 @@ public class BoundingBoxSampler {
 		if (alreadyUsed.size() == maxSamples) {
 			return null;
 		}
-		int idx = rand.nextInt(maxSamples + 1);
-		while (alreadyUsed.contains(idx)) {
-			idx = rand.nextInt(maxSamples + 1);
-		}
-		alreadyUsed.add(idx);
-		GeoHash gh = boundingBox.getBottomLeft().next(idx);
-		if (!boundingBox.getBoundingBox().contains(gh.getPoint())) {
-			return next();
+        GeoHash gh = getNextGeoHash();
+		while (!boundingBox.getBoundingBox().contains(gh.getPoint())) {
+			gh = getNextGeoHash();
 		}
 		return gh;
 	}
+
+    private GeoHash getNextGeoHash() {
+        int idx = rand.nextInt(maxSamples + 1);
+        while (alreadyUsed.contains(idx)) {
+            idx = rand.nextInt(maxSamples + 1);
+        }
+        alreadyUsed.add(idx);
+        return boundingBox.getBottomLeft().next(idx);
+    }
 }
