@@ -27,4 +27,22 @@
 			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+        <profile>
+            <id>geohash-release</id>
+            <distributionManagement>
+                <repository>
+                    <id>art-local-releases</id>
+                    <url>http://art.ccri.com:8081/artifactory/libs-releases-local</url>
+                </repository>
+            </distributionManagement>
+    <scm>
+        <connection>scm:git:git@github.com:ccri/geohash-java.git</connection>
+        <developerConnection>scm:git:git@github.com:ccri/geohash-java.git</developerConnection>
+        <url>https://github.com/ccri/geohash-java</url>
+    </scm>
+
+        </profile>
+
+	</profiles>
 </project>
