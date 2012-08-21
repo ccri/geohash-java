@@ -3,7 +3,7 @@
 	<groupId>ch.hsr</groupId>
 	<artifactId>ch.hsr.geohash</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.10-SNAPSHOT</version>
+	<version>1.0.11-SNAPSHOT</version>
 	<name>geohash-java</name>
 	<dependencies>
 		<dependency>
@@ -13,7 +13,12 @@
 			<type>jar</type>
 			<scope>compile</scope>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.7</version>
+        </dependency>
+    </dependencies>
 	<build>
 		<plugins>
 			<plugin>
