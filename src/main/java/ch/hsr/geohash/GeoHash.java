@@ -83,16 +83,38 @@ public final class GeoHash implements Comparable<GeoHash>, Serializable {
 	 * This will also set up the hashes bounding box and other values, so it can
 	 * also be used with functions like within().
 	 */
-	public static GeoHash fromGeohashString(String geohash) {
-		double[] latitudeRange = { -90.0, 90.0 };
+    public static GeoHash fromGeohashString(String geohash) {
+        return GeoHash.fromGeohashString(geohash, geohash.length() * BASE32_BITS);
+    }
+
+    /**
+     * build a new {@link GeoHash} from a base32-encoded {@link String}.<br>
+     * This will also set up the hashes bounding box and other values, so it can
+     * also be used with functions like within().
+     * <p/>
+     * This version is used to reconstruct a GeoHash from a base32-encoded
+     * string that may have been right-padded with 0s.
+     *
+     * @param geohash      the base-32 string to decode
+     * @param numberOfBits the desired precision of the final GeoHash
+     */
+    public static GeoHash fromGeohashString(String geohash, int numberOfBits) {
+        double[] latitudeRange = { -90.0, 90.0 };
 		double[] longitudeRange = { -180.0, 180.0 };
 
 		boolean isEvenBit = true;
 		GeoHash hash = new GeoHash();
 
-		for (int i = 0; i < geohash.length(); i++) {
+        // sanity check; we could cap it, but it's probably safer to complain
+        int numBitsAvailable = geohash.length() * BASE32_BITS;
+        if (numBitsAvailable < numberOfBits) {
+            throw new IllegalArgumentException("The requested number of bits (" + numberOfBits +
+                    ") cannot exceed the number of bits available (" + numBitsAvailable + ").");
+        }
+
+        for (int i = 0; i < geohash.length(); i++) {
 			int cd = decodeMap.get(geohash.charAt(i));
-			for (int j = 0; j < BASE32_BITS; j++) {
+            for (int j = 0; (j < BASE32_BITS) && (hash.significantBits() < numberOfBits); j++) {
 				int mask = BITS[j];
 				if (isEvenBit) {
 					divideRangeDecode(hash, longitudeRange, (cd & mask) != 0);
@@ -259,11 +281,12 @@ public final class GeoHash implements Comparable<GeoHash>, Serializable {
 	 * get the base32 string for this {@link GeoHash}.<br>
 	 * this method only makes sense, if this hash has a multiple of 5
 	 * significant bits.
+     * </p>
+     * When the number of bits (precision) is not a
+     * multiple of 5, right-pad out the incomplete 5-bit value
+     * with 0s.
 	 */
 	public String toBase32() {
-		if (significantBits % 5 != 0) {
-			return "";
-		}
 		StringBuilder buf = new StringBuilder();
 
 		long firstFiveBitsMask = 0xf800000000000000l;
@@ -421,11 +444,7 @@ public final class GeoHash implements Comparable<GeoHash>, Serializable {
 
 	@Override
 	public String toString() {
-		if (significantBits % 5 == 0) {
-			return String.format("%s -> %s -> %s", Long.toBinaryString(bits), boundingBox, toBase32());
-		} else {
-			return String.format("%s -> %s, bits: %d", Long.toBinaryString(bits), boundingBox, significantBits);
-		}
+        return String.format("%s -> %s -> %s", Long.toBinaryString(bits), boundingBox, toBase32());
 	}
 
 	public String toBinaryString() {

@@ -8,19 +8,17 @@
  */
 package ch.hsr.geohash;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.lang.reflect.Method;
-import java.util.Random;
-
-import org.junit.Before;
-import org.junit.Test;
-
 import ch.hsr.geohash.util.BoundingBoxGeoHashIterator;
 import ch.hsr.geohash.util.RandomGeohashes;
 import ch.hsr.geohash.util.TwoGeoHashBoundingBox;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Random;
+
+import static org.junit.Assert.*;
 
 public class GeoHashTest {
 	private GeoHash hash;
@@ -500,4 +498,63 @@ public class GeoHashTest {
 		assertEquals(steps, lonLess + latLess + latMore + lonMore + inBbox - latLessLonMore - latMoreLonLess - 1);
 
 	}
+
+    /**
+     * Ensures that the new GeoHash-to-string routines we have coded
+     * to handle GeoHashes whose precision is not an even multiple of 5
+     * produce identical values round-trip.
+     *
+     * For a given number of tests, we produce a (roughly) square grid
+     * over the surface of the Earth, and run these points through
+     * (en|de)coding at multiple levels of precision.
+     */
+    @Test
+    public void testEncodeDecodeOff5BitBoundaries() {
+        int nTests = 300;
+        int n = (int)Math.round(Math.ceil(Math.sqrt(nTests/2.0)));
+        int nx = 2 * n;
+        int ny = n;
+
+        double dx = 360.0 / (1.0 + (double)nx);
+        double dy = 180.0 / (1.0 + (double)ny);
+
+        HashMap<String,String> map = new HashMap<String,String>();
+
+        for (int i=0; i<nx; i++) {
+            double x = -180.0 + (1.0+(double)i)*dx;
+            for (int j=0; j<ny; j++) {
+                double y = -90.0 + (1.0+(double)j)*dy;
+
+                System.out.println("[GeoHashTest.testEncodeDecodeOff5BitBoundaries] point(" + y + ", " + x + ")");
+
+                for (int bits=30; bits<40; bits++) {
+                    GeoHash gh0 = GeoHash.withBitPrecision(y, x, bits);
+                    String s0 = gh0.toBase32();
+                    GeoHash gh1 = GeoHash.fromGeohashString(s0, bits);
+                    String s1 = gh1.toBase32();
+
+                    System.out.println("  " + s0 + "; " + gh1.toString());
+
+                    // the "toBase32" strings should be equal round-trip
+                    assertEquals(s0, s1);
+
+                    // the encoded points must be equal
+                    assertEquals(0, gh0.compareTo(gh1));
+
+                    // the underlying bits must be equal
+                    assertEquals(gh0.significantBits(), gh1.significantBits());
+
+                    // the longitude must be reasonably close
+                    double toleranceX = 360.0 / Math.pow(2.0, (bits+1)>>1);
+                    double diffX = Math.abs(gh1.getPoint().getLongitude() - x);
+                    assertEquals(true, diffX <= toleranceX);
+
+                    // the latitude must be reasonably close
+                    double toleranceY = 180.0 / Math.pow(2.0, (bits+0)>>1);
+                    double diffY = Math.abs(gh1.getPoint().getLatitude() - y);
+                    assertEquals(true, diffY <= toleranceY);
+                }
+            }
+        }
+    }
 }
