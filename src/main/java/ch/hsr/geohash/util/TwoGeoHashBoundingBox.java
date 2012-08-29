@@ -23,7 +23,18 @@ public class TwoGeoHashBoundingBox {
         return new TwoGeoHashBoundingBox(bottomLeft, topRight);
     }
 
+    /**
+     * Convenience method so as not to break backward-compatibility with old calls
+     * after we have added support for non-5-bit boundaries.
+     *
+     * @param base32 the double base-32 GeoHash string to decode
+     * @return the decoded GeoHash pair (as one object)
+     */
     public static TwoGeoHashBoundingBox fromBase32(String base32) {
+        return fromBase32(base32, 5*(base32.length()>>1));
+    }
+
+    public static TwoGeoHashBoundingBox fromBase32(String base32, int bitsPrecision) {
         // simple validation
         if (base32 == null) throw new IllegalArgumentException("Invalid (null) base32-string");
 
@@ -34,7 +45,10 @@ public class TwoGeoHashBoundingBox {
 
         String bottomLeft = base32.substring(0, n >> 1);
         String topRight = base32.substring(n >> 1);
-        return new TwoGeoHashBoundingBox(GeoHash.fromGeohashString(bottomLeft), GeoHash.fromGeohashString(topRight));
+        return new TwoGeoHashBoundingBox(
+                GeoHash.fromGeohashString(bottomLeft, bitsPrecision),
+                GeoHash.fromGeohashString(topRight, bitsPrecision)
+        );
     }
 
     public TwoGeoHashBoundingBox(GeoHash bottomLeft, GeoHash topRight) {
@@ -62,5 +76,9 @@ public class TwoGeoHashBoundingBox {
 
     public String toBase32() {
         return bottomLeft.toBase32() + topRight.toBase32();
+    }
+
+    public String toString() {
+        return "TwoGeoHashBoundingBox(" + bottomLeft.toString() + ", " + topRight.toString();
     }
 }

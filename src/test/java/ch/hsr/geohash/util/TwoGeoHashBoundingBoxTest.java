@@ -58,23 +58,27 @@ public class TwoGeoHashBoundingBoxTest {
      */
     @Test
     public void succeedExtractGeoHashesOfDifferingLengths() {
-        String longestBase32LL = "tw1hmg3m5";
-        String longestBase32UR = "tw1pnetcu";
+        String longestBinaryLL = GeoHash.fromGeohashString("tw1hmg3m5").toBinaryString();
+        String longestBinaryUR = GeoHash.fromGeohashString("tw1pnetcu").toBinaryString();
 
-        for (int i=4; i<=9; i++) {
-            String sLL = longestBase32LL.substring(0, i);
-            GeoHash ghLL = GeoHash.fromGeohashString(sLL);
+        for (int i=20; i<=longestBinaryLL.length(); i++) {
+            String sLL = longestBinaryLL.substring(0, i);
+            GeoHash ghLL = GeoHash.fromBinaryString(sLL);
 
-            String sUR = longestBase32UR.substring(0, i);
-            GeoHash ghUR = GeoHash.fromGeohashString(sUR);
+            String sUR = longestBinaryUR.substring(0, i);
+            GeoHash ghUR = GeoHash.fromBinaryString(sUR);
 
-            TwoGeoHashBoundingBox bboxS = TwoGeoHashBoundingBox.fromBase32(sLL + sUR);
+            TwoGeoHashBoundingBox bboxS = TwoGeoHashBoundingBox.fromBase32(ghLL.toBase32() + ghUR.toBase32(), i);
             TwoGeoHashBoundingBox bboxGH = new TwoGeoHashBoundingBox(ghLL, ghUR);
 
             System.out.println("[TwoGeoHashBoundingBoxTest] strings=(" + sLL + ", " + sUR + "); ghs=(" + ghLL.toBinaryString() + ", " + ghUR.toBinaryString());
 
-            Assert.assertTrue("Bounding boxes were not equal between the string-initialized and geohash-initialized TwoGeoHashBoundingBox's", bboxS.getBoundingBox().equals(bboxGH.getBoundingBox()));
-            Assert.assertEquals("Incorrect number of bits precision in resulting string-initialized TwoGeoHashBoundingBox", i*5, bboxS.getBottomLeft().significantBits());
+            Assert.assertTrue("Bounding boxes were not equal between the string-initialized (" +
+                    "sLL=" + sLL + ", sUR=" + sUR +", " + bboxS + ") " +
+                    "and geohash-initialized (ghLL=" + ghLL.toBinaryString() + ", ghUR=" + ghUR.toBinaryString() +
+                    ", " + bboxGH + ") TwoGeoHashBoundingBox's"
+                    , bboxS.getBoundingBox().equals(bboxGH.getBoundingBox()));
+            Assert.assertEquals("Incorrect number of bits precision in resulting string-initialized TwoGeoHashBoundingBox", i, bboxS.getBottomLeft().significantBits());
         }
     }
 }

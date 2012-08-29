@@ -43,6 +43,13 @@ import java.util.ArrayList;
  */
 public class RectangleGeoHashIterator extends GeoHashIterator {
     /**
+     * Offset, in degrees, by which the LL and UR corners are perturbed
+     * to make sure they don't fall on GeoHash boundaries (that may be
+     * shared between GeoHashes).
+     */
+    private static double OFFSET_DEGREES = 1e-6;
+
+    /**
      * Empty constructor.
      */
     public RectangleGeoHashIterator() {
@@ -60,7 +67,7 @@ public class RectangleGeoHashIterator extends GeoHashIterator {
      */
     public RectangleGeoHashIterator(double latitudeLL, double longitudeLL, double latitudeUR, double longitudeUR, int precision) {
         this();
-        initialize(latitudeLL, longitudeLL, latitudeUR, longitudeUR, precision);
+        initialize(latitudeLL+OFFSET_DEGREES, longitudeLL+OFFSET_DEGREES, latitudeUR-OFFSET_DEGREES, longitudeUR-OFFSET_DEGREES, precision);
     }
 
     /**
