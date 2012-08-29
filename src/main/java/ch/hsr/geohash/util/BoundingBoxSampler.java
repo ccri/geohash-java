@@ -13,6 +13,7 @@ public class BoundingBoxSampler {
 	private TwoGeoHashBoundingBox boundingBox;
 	private Set<Integer> alreadyUsed = new HashSet<Integer>();
 	private int maxSamples;
+    private boolean withReplacement = false;
 	private Random rand = new Random();
 
 	/**
@@ -22,30 +23,44 @@ public class BoundingBoxSampler {
 	 *             exceeds Integer.MAX_VALUE
 	 */
 	public BoundingBoxSampler(TwoGeoHashBoundingBox bbox) {
-		this.boundingBox = bbox;
-		long maxSamplesLong = GeoHash.stepsBetween(bbox.getBottomLeft(), bbox.getTopRight());
-		if (maxSamplesLong > Integer.MAX_VALUE) {
-			throw new IllegalArgumentException("This bounding box is too big too sample using this algorithm");
-		}
-		maxSamples = (int) maxSamplesLong;
-	}
+        this(bbox, false);
+    }
 
-	public BoundingBoxSampler(TwoGeoHashBoundingBox bbox, long seed) {
-		this(bbox);
-		this.rand = new Random(seed);
-	}
 
-	public TwoGeoHashBoundingBox getBoundingBox() {
-		return boundingBox;
-	}
+    public BoundingBoxSampler(TwoGeoHashBoundingBox bbox, boolean withReplacement) {
+        this.boundingBox = bbox;
+        this.withReplacement = withReplacement;
+        long maxSamplesLong = GeoHash.stepsBetween(bbox.getBottomLeft(), bbox.getTopRight());
+        if (maxSamplesLong > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("This bounding box is too big too sample using this algorithm");
+        }
+        maxSamples = (int) maxSamplesLong;
+    }
 
-	/**
+    public BoundingBoxSampler(TwoGeoHashBoundingBox bbox, long seed) {
+   		this(bbox);
+   		this.rand = new Random(seed);
+   	}
+
+    public BoundingBoxSampler(TwoGeoHashBoundingBox bbox, long seed, boolean withReplacement) {
+   		this(bbox, withReplacement);
+   		this.rand = new Random(seed);
+   	}
+
+
+    public TwoGeoHashBoundingBox getBoundingBox() {
+        return boundingBox;
+    }
+
+    /**
 	 * @return next sample, or NULL if all samples have been returned
 	 */
 	public GeoHash next() {
-		if (alreadyUsed.size() == maxSamples) {
-			return null;
-		}
+        if(!withReplacement) {
+            if (alreadyUsed.size() == maxSamples) {
+                return null;
+            }
+        }
         GeoHash gh = getNextGeoHash();
 		while (!boundingBox.getBoundingBox().contains(gh.getPoint())) {
 			gh = getNextGeoHash();
@@ -55,10 +70,12 @@ public class BoundingBoxSampler {
 
     private GeoHash getNextGeoHash() {
         int idx = rand.nextInt(maxSamples + 1);
-        while (alreadyUsed.contains(idx)) {
-            idx = rand.nextInt(maxSamples + 1);
+        if(!withReplacement) {
+            while (alreadyUsed.contains(idx)) {
+                idx = rand.nextInt(maxSamples + 1);
+            }
+            alreadyUsed.add(idx);
         }
-        alreadyUsed.add(idx);
         return boundingBox.getBottomLeft().next(idx);
     }
 }

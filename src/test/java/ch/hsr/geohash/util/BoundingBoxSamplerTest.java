@@ -2,6 +2,7 @@ package ch.hsr.geohash.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashSet;
@@ -49,4 +50,12 @@ public class BoundingBoxSamplerTest {
 		// increasing and decreasing.
 		assertEquals(123, crossingZero);
 	}
+
+    @Test
+    public void testWithReplacement() throws Exception {
+        BoundingBox bbox = new BoundingBox(37.7, 37.84, -122.52, -122.35);
+        BoundingBoxSampler sampler = new BoundingBoxSampler(TwoGeoHashBoundingBox.withBitPrecision(bbox, 35), 1179, true);
+        for(int i=0; i<13000; i++)
+            assertNotNull(sampler.next());
+    }
 }

@@ -1,37 +1,33 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>ch.hsr</groupId>
-	<artifactId>ch.hsr.geohash</artifactId>
-	<packaging>jar</packaging>
-	<version>1.0.12-SNAPSHOT</version>
-	<name>geohash-java</name>
-	<dependencies>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.8.1</version>
-			<type>jar</type>
-			<scope>compile</scope>
-		</dependency>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>ch.hsr</groupId>
+    <artifactId>ch.hsr.geohash</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0.12-SNAPSHOT</version>
+    <name>geohash-java</name>
+    <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.7</version>
+            <version>4.8.1</version>
+            <type>jar</type>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-	<profiles>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
         <profile>
             <id>geohash-release</id>
             <distributionManagement>
@@ -42,12 +38,11 @@
             </distributionManagement>
         </profile>
 
-	</profiles>
+    </profiles>
     <scm>
         <connection>scm:git:git@github.com:ccri/geohash-java.git</connection>
         <developerConnection>scm:git:git@github.com:ccri/geohash-java.git</developerConnection>
         <url>https://github.com/ccri/geohash-java</url>
     </scm>
-
 
 </project>
