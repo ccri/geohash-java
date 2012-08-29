@@ -136,8 +136,6 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
         long latPrecision = (precision >> 1);
         long lonPrecision = latPrecision + (precision % 2);
 
-        double delta = 0.0;
-
         GeoHash gh;
         long[] lar = null;
         long lonMin=Long.MAX_VALUE, lonMax=Long.MIN_VALUE, latMin=Long.MAX_VALUE, latMax=Long.MIN_VALUE;
@@ -154,14 +152,14 @@ public abstract class GeoHashIterator implements Iterator<GeoHash> {
 
         GeoHash ghLL = composeGeoHashFromBits(latMin, lonMin, (int)latPrecision, (int)lonPrecision);
         WGS84Point ptLL = VincentyGeodesy.moveInDirection(
-                VincentyGeodesy.moveInDirection(ghLL.getPoint(), 270, radiusInMeters-delta),
-                180, radiusInMeters-delta
+                VincentyGeodesy.moveInDirection(ghLL.getPoint(), 270, radiusInMeters),
+                180, radiusInMeters
         );
 
         GeoHash ghUR = composeGeoHashFromBits(latMax, lonMax, (int)latPrecision, (int)lonPrecision);
         WGS84Point ptUR = VincentyGeodesy.moveInDirection(
-                VincentyGeodesy.moveInDirection(ghUR.getPoint(), 0, radiusInMeters-delta),
-                90, radiusInMeters-delta
+                VincentyGeodesy.moveInDirection(ghUR.getPoint(), 0, radiusInMeters),
+                90, radiusInMeters
         );
 
         return new GeoHash[]{

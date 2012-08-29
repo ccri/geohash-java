@@ -79,9 +79,6 @@ public class TwoGeoHashBoundingBox {
     }
 
     public String toString() {
-        return "TwoGeoHashBoundingBox(" +
-                bottomLeft.toString() + ", " +
-                topRight.toString()
-                ;
+        return "TwoGeoHashBoundingBox(" + bottomLeft.toString() + ", " + topRight.toString();
     }
 }
